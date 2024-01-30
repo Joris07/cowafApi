@@ -1,0 +1,22 @@
+FROM php:8.2-apache
+
+ENV GITHUB_TOKEN=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
+
+RUN apt-get update && apt-get install -y \
+    libicu-dev \
+    zlib1g-dev \
+    libzip-dev \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN docker-php-ext-install intl zip pdo_mysql
+
+WORKDIR /var/www/html
+
+RUN git clone https://{GITHUB_TOKEN}@github.com/Joris07/cowafApi.git .
+
+RUN composer install --no-scripts --no-interaction --no-autoloader
+
+EXPOSE 80
+
+CMD ["apache2-foreground"]

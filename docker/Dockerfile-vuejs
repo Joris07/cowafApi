@@ -1,0 +1,15 @@
+FROM node:latest
+
+ENV GITHUB_TOKEN=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
+
+RUN apt-get update && apt-get install -y git
+
+WORKDIR /app
+
+RUN git clone https://${GITHUB_TOKEN}@github.com/Joris07/cowaf.git
+
+WORKDIR /app/cowaf
+
+RUN npm install
+
+EXPOSE 8080
