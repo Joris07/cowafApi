@@ -8,11 +8,11 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class TestController extends AbstractController
 {
-    /**
-     * @Route("/tasks", name="tasks_list")
-     */
-    public function list(): Response
+    #[Route('/test', name: 'app_test')]
+    public function index(): JsonResponse
     {
-        return $this->json(['message' => 'List of tasks']);
+        return $this->json([
+            'message' => 'Welcome to your new controller!'
+        ]);
     }
 }
