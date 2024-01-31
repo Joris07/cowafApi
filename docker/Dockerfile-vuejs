@@ -1,6 +1,6 @@
 FROM node:latest
 
-ENV GITHUB_TOKEN=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
+ENV GITHUB_TOKEN=
 
 RUN apt-get update && apt-get install -y git
 

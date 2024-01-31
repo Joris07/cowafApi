@@ -1,6 +1,6 @@
 FROM php:8.2-apache
 
-ENV GITHUB_TOKEN=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
+ENV GITHUB_TOKEN=
 
 RUN a2enmod rewrite
 

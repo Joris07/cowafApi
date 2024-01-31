@@ -50,12 +50,13 @@ Un projet PWA développé avec Vue.js, Symfony API, Docker et MySQL.
 ## Installation
 
 1. Lancer le projet avec docker :
+    - Il faut ajouter le token Github dans le Dockerfile symfony et vue  
 
-   ```bash
-   cd cowafApi/docker
+    ```bash
+    cd cowafApi/docker
 
-   docker-compose up --build
-   ```
+    docker-compose up --build
+    ```
 
 2. Accès à l'Application :
     - L'application Vue.js est accessible à l'URL : http://localhost:40110
