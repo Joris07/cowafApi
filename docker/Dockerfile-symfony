@@ -2,21 +2,35 @@ FROM php:8.2-apache
 
 ENV GITHUB_TOKEN=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
 
+RUN a2enmod rewrite
+
 RUN apt-get update && apt-get install -y \
     libicu-dev \
     zlib1g-dev \
     libzip-dev \
+    wget --no-install-recommends \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-RUN docker-php-ext-install intl zip pdo_mysql
+RUN docker-php-ext-install pdo intl zip pdo_mysql
 
-WORKDIR /var/www/html
+RUN wget https://getcomposer.org/download/2.6.6/composer.phar \
+    && mv composer.phar /usr/bin/composer && chmod +x /usr/bin/composer
 
-RUN git clone https://{GITHUB_TOKEN}@github.com/Joris07/cowafApi.git .
+COPY apache.conf /etc/apache2/sites-enabled/000-default.conf
+COPY ports.conf /etc/apache2/ports.conf
+COPY entrypoint.sh /entrypoint.sh
 
-RUN composer install --no-scripts --no-interaction --no-autoloader
+WORKDIR /var/www
 
-EXPOSE 80
+RUN git clone https://${GITHUB_TOKEN}@github.com/Joris07/cowafApi.git
+
+EXPOSE 81
+
+RUN chmod +x /entrypoint.sh
 
 CMD ["apache2-foreground"]
+
+WORKDIR /var/www/cowafApi
+
+ENTRYPOINT ["/entrypoint.sh"]

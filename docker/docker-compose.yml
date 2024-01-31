@@ -1,4 +1,5 @@
 version: '0'
+name: cowaf
 
 services:
   vuejs-app:
@@ -17,11 +18,8 @@ services:
       context: .
       dockerfile: Dockerfile-symfony
     container_name: symfony-api
-    working_dir: /var/www/html
-    volumes:
-      - ./backend:/var/www/html
     ports:
-      - "40111:80"
+      - "40111:81"
 
   mysql-db:
     image: mysql:8.0
