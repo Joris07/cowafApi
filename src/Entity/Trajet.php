@@ -6,6 +6,7 @@ use App\Repository\TrajetRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
+use Symfony\Component\Serializer\Annotation\Groups;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: TrajetRepository::class)]
@@ -14,39 +15,47 @@ class Trajet
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['trajet', 'animal'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['trajet'])]
     private ?string $lieuDepart = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['trajet'])]
     private ?string $lieuDestination = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    #[Groups(['trajet'])]
     private ?\DateTimeInterface $dateHeureDepart = null;
 
     #[ORM\Column]
+    #[Groups(['trajet'])]
     private ?int $placesDisponible = null;
 
     #[ORM\Column]
+    #[Groups(['trajet'])]
     private ?int $prixParPersonne = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['trajet'])]
     private ?string $description = null;
 
-    #[ORM\ManyToMany(targetEntity: User::class, inversedBy: 'trajetsParticipe')]
-    private Collection $trajetsParticipants;
-
-    #[ORM\ManyToOne(inversedBy: 'trajetsCrees')]
+    #[ORM\ManyToOne(inversedBy: 'trajetsCrees', cascade : ["persist"])]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['trajet'])]
     private ?User $user = null;
 
     #[ORM\ManyToMany(targetEntity: Animal::class, inversedBy: 'trajets')]
+    #[Groups(['trajet'])]
     private Collection $animaux;
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    private ?\DateTimeInterface $dateSuppression = null;
 
     public function __construct()
     {
-        $this->trajetsParticipants = new ArrayCollection();
         $this->animaux = new ArrayCollection();
     }
 
@@ -140,30 +149,6 @@ class Trajet
     }
 
     /**
-     * @return Collection<int, User>
-     */
-    public function getTrajetsParticipants(): Collection
-    {
-        return $this->trajetsParticipants;
-    }
-
-    public function addTrajetsParticipant(User $trajetsParticipant): static
-    {
-        if (!$this->trajetsParticipants->contains($trajetsParticipant)) {
-            $this->trajetsParticipants->add($trajetsParticipant);
-        }
-
-        return $this;
-    }
-
-    public function removeTrajetsParticipant(User $trajetsParticipant): static
-    {
-        $this->trajetsParticipants->removeElement($trajetsParticipant);
-
-        return $this;
-    }
-
-    /**
      * @return Collection<int, Animal>
      */
     public function getanimaux(): Collection
@@ -183,6 +168,18 @@ class Trajet
     public function removeAnimauxQuiVoyage(Animal $animauxQuiVoyage): static
     {
         $this->animaux->removeElement($animauxQuiVoyage);
+
+        return $this;
+    }
+
+    public function getDateSuppression(): ?\DateTimeInterface
+    {
+        return $this->dateSuppression;
+    }
+
+    public function setDateSuppression(?\DateTimeInterface $dateSuppression): static
+    {
+        $this->dateSuppression = $dateSuppression;
 
         return $this;
     }

@@ -1,0 +1,22 @@
+vich_uploader:
+    db_driver: orm
+
+    metadata:
+        type: attribute
+
+    mappings:
+        userPhoto:
+            uri_prefix: /images/userPhoto
+            upload_destination: '%kernel.project_dir%/public/images/userPhoto'
+            namer: Vich\UploaderBundle\Naming\SmartUniqueNamer
+            inject_on_load: true
+            delete_on_update: true
+            delete_on_remove: true
+
+        animalPhoto:
+            uri_prefix: /images/animalPhoto
+            upload_destination: '%kernel.project_dir%/public/images/animalPhoto'
+            namer: Vich\UploaderBundle\Naming\SmartUniqueNamer
+            inject_on_load: true
+            delete_on_update: true
+            delete_on_remove: true

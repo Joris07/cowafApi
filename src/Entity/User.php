@@ -8,78 +8,137 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\HttpFoundation\File\File;
+use Vich\UploaderBundle\Mapping\Annotation as Vich;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
+#[Vich\Uploadable]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['trajet', 'user', 'animal', 'avis'])]
     private ?int $id = null;
-
+    
     #[ORM\Column(length: 180, unique: true)]
+    #[Groups(['user'])]
     private ?string $email = null;
 
     #[ORM\Column]
-    private array $roles = [];
+    #[Groups(['user'])]
+    private array $roles = ["ROLE_USER"];
 
     /**
      * @var string The hashed password
      */
     #[ORM\Column]
+    #[Groups(['user'])]
     private ?string $password = null;
 
     #[ORM\Column(length: 50)]
+    #[Groups(['user'])]
     private ?string $nom = null;
 
     #[ORM\Column(length: 50)]
+    #[Groups(['user'])]
     private ?string $prenom = null;
 
     #[ORM\Column(length: 50, nullable: true)]
+    #[Groups(['user'])]
     private ?string $telephone = null;
 
     #[ORM\Column]
-    private ?int $note = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $photo = null;
+    #[Groups(['user'])]
+    private ?int $note = 0;
 
     #[ORM\Column]
-    private ?bool $isAssociation = null;
+    #[Groups(['user'])]
+    private ?bool $isAssociation = false;
 
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Animal::class)]
+    #[Groups(['user'])]
     private Collection $animals;
 
-    #[ORM\ManyToMany(targetEntity: Trajet::class, mappedBy: 'trajetsParticipants')]
-    private Collection $trajetsParticipe;
-
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Trajet::class)]
+    #[Groups(['user'])]
     private Collection $trajetsCrees;
 
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Vehicule::class)]
+    #[Groups(['user'])]
     private Collection $vehicules;
 
     #[ORM\ManyToMany(targetEntity: Signalement::class, mappedBy: 'signale')]
+    #[Groups(['user'])]
     private Collection $signalements;
 
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Facture::class)]
+    #[Groups(['user'])]
     private Collection $factures;
 
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Avis::class)]
-    private Collection $avis;
+    #[ORM\OneToMany(mappedBy: 'auteur', targetEntity: Avis::class)]
+    #[Groups(['user'])]
+    private Collection $avisPostes;
+
+    #[ORM\OneToMany(mappedBy: 'destinataire', targetEntity: Avis::class)]
+    #[Groups(['user'])]
+    private Collection $avisDestines;
+
+    #[Vich\UploadableField(mapping: 'userPhoto', fileNameProperty: 'imageName')]
+    #[Groups(['user'])]
+    private ?File $photoProfil = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?string $imageName = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $updatedAt = null;
 
     public function __construct()
     {
         $this->animals = new ArrayCollection();
-        $this->trajetsParticipe = new ArrayCollection();
         $this->trajetsCrees = new ArrayCollection();
         $this->vehicules = new ArrayCollection();
         $this->signalements = new ArrayCollection();
         $this->factures = new ArrayCollection();
-        $this->avis = new ArrayCollection();
+        $this->avisPostes = new ArrayCollection();
+        $this->avisDestines = new ArrayCollection();
+    }
+
+    public function setImageName(?string $imageName): void
+    {
+        $this->imageName = $imageName;
+    }
+
+    public function getImageName(): ?string
+    {
+        return $this->imageName;
+    }
+
+    public function getUpdatedAt(): ?\DateTimeImmutable
+    {
+        return $this->updatedAt;
+    }
+
+    public function getPhotoProfil(): ?File
+    {
+        return $this->photoProfil;
+    }
+
+    /**
+     *
+     * @param File|\Symfony\Component\HttpFoundation\File\UploadedFile|null $imageFile
+     */
+    public function setPhotoProfil(?File $imageFile = null): void
+    {
+        $this->photoProfil = $imageFile;
+
+        if (null !== $imageFile) {
+            $this->updatedAt = new \DateTimeImmutable();
+        }
     }
     
-
     public function getId(): ?int
     {
         return $this->id;
@@ -198,18 +257,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getPhoto(): ?string
-    {
-        return $this->photo;
-    }
-
-    public function setPhoto(?string $photo): static
-    {
-        $this->photo = $photo;
-
-        return $this;
-    }
-
     public function isIsAssociation(): ?bool
     {
         return $this->isAssociation;
@@ -247,33 +294,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             if ($animal->getUser() === $this) {
                 $animal->setUser(null);
             }
-        }
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Trajet>
-     */
-    public function getTrajetsParticipe(): Collection
-    {
-        return $this->trajetsParticipe;
-    }
-
-    public function addTrajetsParticipe(Trajet $trajetsParticipe): static
-    {
-        if (!$this->trajetsParticipe->contains($trajetsParticipe)) {
-            $this->trajetsParticipe->add($trajetsParticipe);
-            $trajetsParticipe->addTrajetsParticipant($this);
-        }
-
-        return $this;
-    }
-
-    public function removeTrajetsParticipe(Trajet $trajetsParticipe): static
-    {
-        if ($this->trajetsParticipe->removeElement($trajetsParticipe)) {
-            $trajetsParticipe->removeTrajetsParticipant($this);
         }
 
         return $this;
@@ -397,27 +417,48 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     /**
      * @return Collection<int, Avis>
      */
-    public function getAvis(): Collection
+    public function getAvisPostes(): Collection
     {
-        return $this->avis;
+        return $this->avisPostes;
     }
 
-    public function addAvi(Avis $avi): static
+    public function addAvisPoste(Avis $avis): static
     {
-        if (!$this->avis->contains($avi)) {
-            $this->avis->add($avi);
-            $avi->setUser($this);
+        if (!$this->avisPostes->contains($avis)) {
+            $this->avisPostes->add($avis);
+            $avis->getAuteur($this);
         }
 
         return $this;
     }
 
-    public function removeAvi(Avis $avi): static
+    public function removeAvisPoste(Avis $avis): static
     {
-        if ($this->avis->removeElement($avi)) {
+        if ($this->avisPostes->removeElement($avis)) {
+            if ($avis->getAuteur() === $this) {
+                $avis->setAuteur(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function addAvisDestine(Avis $avis): static
+    {
+        if (!$this->avisDestines->contains($avis)) {
+            $this->avisDestines->add($avis);
+            $avis->getDestinataire($this);
+        }
+
+        return $this;
+    }
+
+    public function removeAvisDestine(Avis $avis): static
+    {
+        if ($this->avisDestines->removeElement($avis)) {
             // set the owning side to null (unless already changed)
-            if ($avi->getUser() === $this) {
-                $avi->setUser(null);
+            if ($avis->getDestinataire() === $this) {
+                $avis->setDestinataire(null);
             }
         }
 

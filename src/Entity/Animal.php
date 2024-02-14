@@ -6,34 +6,87 @@ use App\Repository\AnimalRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\HttpFoundation\File\File;
+use Vich\UploaderBundle\Mapping\Annotation as Vich;
 
 #[ORM\Entity(repositoryClass: AnimalRepository::class)]
+#[Vich\Uploadable]
 class Animal
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['trajet', 'user', 'animal'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]
+    #[Groups(['animal'])]
     private ?string $prenom = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['animal'])]
     private ?string $description = null;
 
     #[ORM\Column]
+    #[Groups(['animal'])]
     private ?int $age = null;
 
     #[ORM\ManyToOne(inversedBy: 'animals')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['animal'])]
     private ?User $user = null;
 
-    #[ORM\ManyToMany(targetEntity: Trajet::class, mappedBy: 'animauxQuiVoyages')]
+    #[ORM\ManyToMany(targetEntity: Trajet::class, mappedBy: 'animaux')]
+    #[Groups(['animal'])]
     private Collection $trajets;
+
+    #[Vich\UploadableField(mapping: 'animalPhoto', fileNameProperty: 'imageName')]
+    #[Groups(['animal'])]
+    private ?File $photoAnimal = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?string $imageName = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $updatedAt = null;
 
     public function __construct()
     {
         $this->trajets = new ArrayCollection();
+    }
+
+    public function setImageName(?string $imageName): void
+    {
+        $this->imageName = $imageName;
+    }
+
+    public function getImageName(): ?string
+    {
+        return $this->imageName;
+    }
+
+    public function getUpdatedAt(): ?\DateTimeImmutable
+    {
+        return $this->updatedAt;
+    }
+
+    public function getPhotoAnimal(): ?File
+    {
+        return $this->photoAnimal;
+    }
+
+    /**
+     *
+     * @param File|\Symfony\Component\HttpFoundation\File\UploadedFile|null $imageFile
+     */
+    public function setPhotoAnimal(?File $imageFile = null): void
+    {
+        $this->photoAnimal = $imageFile;
+
+        if (null !== $imageFile) {
+            $this->updatedAt = new \DateTimeImmutable();
+        }
     }
 
     public function getId(): ?int

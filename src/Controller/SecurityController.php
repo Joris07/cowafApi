@@ -12,34 +12,27 @@ use Symfony\Component\Routing\Annotation\Route;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
-
 class SecurityController extends AbstractController
 {
 	#[Route('/api/login', name:"app_login", methods:["POST"])]
 	public function login(Request $request, UserPasswordHasherInterface $passwordHasher, JWTTokenManagerInterface $JWTManager, ManagerRegistry $doctrine)
-    {
-        $credentials = json_decode($request->getContent(), true);
+	{
+		$credentials = json_decode($request->getContent(), true);
 
-        if (empty($credentials['email']) || empty($credentials['password'])) {
-            throw new BadCredentialsException('Invalid credentials');
-        }
+		if (empty($credentials['email']) || empty($credentials['password'])) {
+			throw new BadCredentialsException('Invalid credentials');
+		}
 
-        // Vérification des identifiants par email
-        $user = $doctrine->getRepository(User::class)->findOneBy(['email' => $credentials['email']]);
+		// Vérification des identifiants par email
+		$user = $doctrine->getRepository(User::class)->findOneBy(['email' => $credentials['email']]);
 
-        if (!$user || !$passwordHasher->isPasswordValid($user, $credentials['password'])) {
-            throw new BadCredentialsException('Invalid credentials');
-        }
+		if (!$user || !$passwordHasher->isPasswordValid($user, $credentials['password'])) {
+			throw new BadCredentialsException('Invalid credentials');
+		}
 
-        // Génération du token JWT
-        $token = $JWTManager->create($user);
+		// Génération du token JWT
+		$token = $JWTManager->create($user);
 
-        return new JsonResponse(['token' => $token]);
-    }
-
-	#[Route('/api/profile', name:"app_profile", methods:["GET"])]
-	public function profile(User $user)
-    {
-        return new JsonResponse(['email' => $user->getEmail()]);
-    }
+		return new JsonResponse(['token' => $token]);
+	}
 }
