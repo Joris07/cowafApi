@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\AvisRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: AvisRepository::class)]
 class Avis
@@ -12,24 +13,35 @@ class Avis
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['user', 'avis'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['avis'])]
     private ?string $contenu = null;
 
     #[ORM\Column]
+    #[Groups(['avis'])]
     private ?int $note = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    #[Groups(['avis'])]
     private ?\DateTimeInterface $date = null;
 
     #[ORM\ManyToOne(inversedBy: 'avis')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?User $user = null;
+    #[Groups(['avis'])]
+    private ?User $auteur = null;
 
     #[ORM\ManyToOne(inversedBy: 'avis')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?User $idDestinataire = null;
+    #[Groups(['avis'])]
+    private ?User $destinataire = null;
+
+    public function __construct()
+    {
+        $this->date = new \DateTimeImmutable();
+    }
 
     public function getId(): ?int
     {
@@ -72,26 +84,26 @@ class Avis
         return $this;
     }
 
-    public function getUser(): ?User
+    public function getAuteur(): ?User
     {
-        return $this->user;
+        return $this->auteur;
     }
 
-    public function setUser(?User $user): static
+    public function setAuteur(?User $user): static
     {
-        $this->user = $user;
+        $this->auteur = $user;
 
         return $this;
     }
 
-    public function getIdDestinataire(): ?User
+    public function getDestinataire(): ?User
     {
-        return $this->idDestinataire;
+        return $this->destinataire;
     }
 
-    public function setIdDestinataire(?User $idDestinataire): static
+    public function setDestinataire(?User $idDestinataire): static
     {
-        $this->idDestinataire = $idDestinataire;
+        $this->destinataire = $idDestinataire;
 
         return $this;
     }
