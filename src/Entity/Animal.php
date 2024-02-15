@@ -24,10 +24,6 @@ class Animal
     #[Groups(['animal'])]
     private ?string $prenom = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['animal'])]
-    private ?string $description = null;
-
     #[ORM\Column]
     #[Groups(['animal'])]
     private ?int $age = null;
@@ -46,14 +42,19 @@ class Animal
     private ?File $photoAnimal = null;
 
     #[ORM\Column(nullable: true)]
-    private ?string $imageName = null;
+    #[Groups(['animal'])]
+    private ?\DateTimeImmutable $updatedAt = null;
 
     #[ORM\Column(nullable: true)]
-    private ?\DateTimeImmutable $updatedAt = null;
+    private ?string $imageName = null;
+
+    #[ORM\ManyToMany(targetEntity: DescriptionAnimal::class, inversedBy: 'animals')]
+    private Collection $description;
 
     public function __construct()
     {
         $this->trajets = new ArrayCollection();
+        $this->description = new ArrayCollection();
     }
 
     public function setImageName(?string $imageName): void
@@ -102,18 +103,6 @@ class Animal
     public function setPrenom(string $prenom): static
     {
         $this->prenom = $prenom;
-
-        return $this;
-    }
-
-    public function getDescription(): ?string
-    {
-        return $this->description;
-    }
-
-    public function setDescription(?string $description): static
-    {
-        $this->description = $description;
 
         return $this;
     }
@@ -168,4 +157,29 @@ class Animal
 
         return $this;
     }
+
+    /**
+     * @return Collection<int, DescriptionAnimal>
+     */
+    public function getDescription(): Collection
+    {
+        return $this->description;
+    }
+
+    public function addDescription(DescriptionAnimal $description): static
+    {
+        if (!$this->description->contains($description)) {
+            $this->description->add($description);
+        }
+
+        return $this;
+    }
+
+    public function removeDescription(DescriptionAnimal $description): static
+    {
+        $this->description->removeElement($description);
+
+        return $this;
+    }
+
 }

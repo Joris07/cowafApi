@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Animal;
+use App\Entity\DescriptionAnimal;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -55,13 +56,35 @@ class AnimalController extends AbstractController
     {
         try {
 			$animalData = $request->toArray();
-            $animal = $this->serializer->deserialize($request->getContent(), Animal::class, 'json', ['groups' => 'animal']);
+            $animal = $this->serializer->deserialize(
+                $request->getContent(), 
+                Animal::class, 
+                'json', 
+                ['groups' => 'animal']
+            );
 
 			if (isset($animalData['user'])) {
 				$user = $this->doctrine->getRepository(User::class)->find($animalData['user']);
-                $animal->setUser($user);
+                if (!is_null($user)) {
+                    $animal->setUser($user);
+                }
+                else {
+                    throw new \InvalidArgumentException('Aucun propriétaire n\'a été trouvé');
+                }
             } else {
                 throw new \InvalidArgumentException('Aucun propriétaire n\'a été spécifié');
+            }
+
+            if (isset($animalData['descriptions'])) {
+                foreach ($animalData['descriptions'] as $idDescription) {
+                    $descriptionAnimal = $this->doctrine->getRepository(DescriptionAnimal::class)->find($idDescription);
+                    if (!is_null($descriptionAnimal)) {
+                        $animal->addDescription($descriptionAnimal);
+                    }
+                    else {
+                        throw new \InvalidArgumentException('Aucune description de l\'animal n\'a été spécifié');
+                    }
+                }
             }
 
 			$this->em->persist($animal);
@@ -77,6 +100,7 @@ class AnimalController extends AbstractController
     public function updateAnimal(int $id, Request $request): JsonResponse
     {
         try {
+            $animalData = $request->toArray();
             $animal = $this->doctrine->getRepository(Animal::class)->find($id);
 
             if (!$animal) {
@@ -86,6 +110,18 @@ class AnimalController extends AbstractController
 			if (empty($request->toArray())) {
 				return new JsonResponse(['message' => 'Aucune donnée passée'], Response::HTTP_NOT_FOUND);
 			}
+
+            if (isset($animalData['descriptions'])) {
+                foreach ($animalData['descriptions'] as $idDescription) {
+                    $descriptionAnimal = $this->doctrine->getRepository(DescriptionAnimal::class)->find($idDescription);
+                    if (!is_null($descriptionAnimal)) {
+                        $animal->addDescription($descriptionAnimal);
+                    }
+                    else {
+                        throw new \InvalidArgumentException('Aucune description de l\'animal n\'a été spécifié');
+                    }
+                }
+            }
 
             $animalUpdate = $this->serializer->deserialize(
 				$request->getContent(), 
@@ -125,6 +161,35 @@ class AnimalController extends AbstractController
             $this->em->flush();
 
             return new JsonResponse(['message' => 'Photo mise à jour']);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    #[Route('/{id}/remove-description', name: 'remove_description', methods: ['DELETE'])]
+    public function removeDescription(int $id, Request $request): JsonResponse
+    {
+        try {
+            $animal = $this->doctrine->getRepository(Animal::class)->find($id);
+
+            if (!$animal) {
+                return new JsonResponse(['message' => 'Animal non trouvé.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $content = $request->toArray();
+            $descriptionIdsToRemove = $content['descriptions'] ?? [];
+
+            foreach ($descriptionIdsToRemove as $descriptionId) {
+                $description = $this->doctrine->getRepository(DescriptionAnimal::class)->find($descriptionId);
+
+                if ($description) {
+                    $animal->removeDescription($description);
+                }
+            }
+
+            $this->em->flush();
+
+            return new JsonResponse(['message' => 'Descriptions supprimées de l\'animal']);
         } catch (\Exception $e) {
             return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }

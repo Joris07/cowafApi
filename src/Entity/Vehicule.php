@@ -12,18 +12,25 @@ class Vehicule
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['user'])]
+    #[Groups(['user', 'vehicule'])]
     private ?int $id = null;
 
-    #[ORM\Column(length: 8)]
+    #[ORM\Column(length: 9)]
+    #[Groups(['vehicule'])]
     private ?string $immatriculation = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['vehicule'])]
     private ?string $description = null;
 
     #[ORM\ManyToOne(inversedBy: 'vehicules')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['vehicule'])]
     private ?User $user = null;
+
+    #[ORM\ManyToOne]
+    #[Groups(['vehicule'])]
+    private ?ModeleVehicule $modele = null;
 
     public function getId(): ?int
     {
@@ -62,6 +69,18 @@ class Vehicule
     public function setUser(?User $user): static
     {
         $this->user = $user;
+
+        return $this;
+    }
+
+    public function getModele(): ?ModeleVehicule
+    {
+        return $this->modele;
+    }
+
+    public function setModele(?ModeleVehicule $modele): static
+    {
+        $this->modele = $modele;
 
         return $this;
     }

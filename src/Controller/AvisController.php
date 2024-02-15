@@ -97,7 +97,7 @@ class AvisController extends AbstractController
             $avis = $this->doctrine->getRepository(Avis::class)->find($id);
 
             if (empty($avisData)) {
-                return new JsonResponse(['message' => 'Corps vide'], Response::HTTP_NOT_FOUND);
+                return new JsonResponse(['message' => 'Aucune donnée passée'], Response::HTTP_NOT_FOUND);
             }
 
             if (!$avis) {
