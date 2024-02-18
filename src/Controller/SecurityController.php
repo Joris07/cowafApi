@@ -23,14 +23,12 @@ class SecurityController extends AbstractController
 			throw new BadCredentialsException('Invalid credentials');
 		}
 
-		// Vérification des identifiants par email
 		$user = $doctrine->getRepository(User::class)->findOneBy(['email' => $credentials['email']]);
 
 		if (!$user || !$passwordHasher->isPasswordValid($user, $credentials['password'])) {
 			throw new BadCredentialsException('Invalid credentials');
 		}
 
-		// Génération du token JWT
 		$token = $JWTManager->create($user);
 
 		return new JsonResponse(['token' => $token]);

@@ -6,6 +6,7 @@ use App\Repository\FactureRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: FactureRepository::class)]
 class Facture
@@ -13,18 +14,33 @@ class Facture
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['user'])]
+    #[Groups(['user', 'facture'])]
     private ?int $id = null;
 
     #[ORM\Column]
+    #[Assert\NotNull(message: "Le montant ne peut pas être nul.")]
+    #[Assert\GreaterThanOrEqual(value: 0, message: "Le montant doit être supérieur ou égal à zéro.")]
+    #[Groups(['facture'])]
     private ?int $montant = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    private ?\DateTimeInterface $date = null;
+    #[Groups(['facture'])]
+    private ?\DateTime $date = null;
 
     #[ORM\ManyToOne(inversedBy: 'factures')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['facture'])]
     private ?User $user = null;
+
+    #[ORM\OneToOne(inversedBy: 'facture')]
+    #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['facture'])]
+    private ?Trajet $trajet = null;
+
+    public function __construct()
+    {
+        $this->date = new \DateTimeImmutable();
+    }
 
     public function getId(): ?int
     {
@@ -43,12 +59,12 @@ class Facture
         return $this;
     }
 
-    public function getDate(): ?\DateTimeInterface
+    public function getDate(): ?\DateTime
     {
         return $this->date;
     }
 
-    public function setDate(\DateTimeInterface $date): static
+    public function setDate(\DateTime $date): static
     {
         $this->date = $date;
 
@@ -63,6 +79,18 @@ class Facture
     public function setUser(?User $user): static
     {
         $this->user = $user;
+
+        return $this;
+    }
+
+    public function getTrajet(): ?Trajet
+    {
+        return $this->trajet;
+    }
+
+    public function setTrajet(Trajet $trajet): static
+    {
+        $this->trajet = $trajet;
 
         return $this;
     }

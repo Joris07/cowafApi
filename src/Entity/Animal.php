@@ -9,6 +9,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\HttpFoundation\File\File;
 use Vich\UploaderBundle\Mapping\Annotation as Vich;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: AnimalRepository::class)]
 #[Vich\Uploadable]
@@ -21,12 +22,22 @@ class Animal
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]
+    #[Assert\NotBlank(message: "Le prenom ne peut pas être vide.")]
+    #[Assert\Length(max: 50, maxMessage: "Le prenom ne peut pas dépasser {{ limit }} caractères")]
     #[Groups(['animal'])]
     private ?string $prenom = null;
 
     #[ORM\Column]
+    #[Assert\Range(
+        max: 50,
+        maxMessage: "L'âge de votre animal ne peut pas dépasser {{ limit }} ans"
+    )]
+    #[Assert\Type(
+        type: 'integer',
+        message: 'Entier uniquement accepté',
+    )]
     #[Groups(['animal'])]
-    private ?int $age = null;
+    private ?int $age = 1;
 
     #[ORM\ManyToOne(inversedBy: 'animals')]
     #[ORM\JoinColumn(nullable: false)]

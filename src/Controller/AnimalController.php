@@ -14,6 +14,8 @@ use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 use App\Entity\User;
+use App\Util\ValidationUtils;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/api/animals', name: 'app_animal')]
 class AnimalController extends AbstractController
@@ -21,12 +23,14 @@ class AnimalController extends AbstractController
     private ManagerRegistry $doctrine;
     private SerializerInterface $serializer;
     private EntityManagerInterface $em;
+    private ValidatorInterface $validator; // Ajout du Validator
 
-    public function __construct(ManagerRegistry $doctrine, SerializerInterface $serializer, EntityManagerInterface $em)
+    public function __construct(ManagerRegistry $doctrine, SerializerInterface $serializer, EntityManagerInterface $em, ValidatorInterface $validator)
     {
         $this->doctrine = $doctrine;
         $this->serializer = $serializer;
         $this->em = $em;
+        $this->validator = $validator; // Injection du Validator
     }
 
     #[Route('/', name: 'animals', methods: ['GET'])]
@@ -44,7 +48,7 @@ class AnimalController extends AbstractController
         $animal = $this->doctrine->getRepository(Animal::class)->find($id);
 
         if (!$animal) {
-            return new JsonResponse(['message' => 'Animal non trouvé.'], Response::HTTP_NOT_FOUND);
+            return new JsonResponse(['errors' => ValidationUtils::createValidationErrorArray("animal", "Animal non trouvé")], Response::HTTP_NOT_FOUND);
         }
 
         $jsonAnimal = $this->serializer->serialize($animal, 'json', ['groups' => 'animal']);
@@ -69,10 +73,18 @@ class AnimalController extends AbstractController
                     $animal->setUser($user);
                 }
                 else {
-                    throw new \InvalidArgumentException('Aucun propriétaire n\'a été trouvé');
+                    return new JsonResponse(['errors' => ValidationUtils::createValidationErrorArray("propriétaire", "Aucun propriétaire trouvé")], Response::HTTP_NOT_FOUND);
                 }
             } else {
-                throw new \InvalidArgumentException('Aucun propriétaire n\'a été spécifié');
+                return new JsonResponse(['errors' => ValidationUtils::createValidationErrorArray("propriétaire", "Aucun propriétaire spécifié")], Response::HTTP_NOT_FOUND);
+            }
+
+            $errors = $this->validator->validate($animal);
+
+            if (count($errors) > 0) {
+                $formattedErrors = ValidationUtils::formatValidationErrors($errors);
+
+                return new JsonResponse(['errors' => $formattedErrors], Response::HTTP_BAD_REQUEST);
             }
 
             if (isset($animalData['descriptions'])) {
@@ -82,7 +94,7 @@ class AnimalController extends AbstractController
                         $animal->addDescription($descriptionAnimal);
                     }
                     else {
-                        throw new \InvalidArgumentException('Aucune description de l\'animal n\'a été spécifié');
+                        return new JsonResponse(['errors' => ValidationUtils::createValidationErrorArray("description", "Aucune description trouvée")], Response::HTTP_NOT_FOUND);
                     }
                 }
             }
@@ -90,9 +102,9 @@ class AnimalController extends AbstractController
 			$this->em->persist($animal);
 			$this->em->flush();
 
-            return new JsonResponse(['message' => 'Animal créé avec succès', 'id' => $animal->getId()], Response::HTTP_CREATED);
+            return new JsonResponse(['success' => ValidationUtils::createValidationErrorArray("animal", "Animal créé avec succès", $animal->getId())], Response::HTTP_CREATED);
         } catch (\Exception $e) {
-            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+            return new JsonResponse(['errors' => [$e->getMessage()]], Response::HTTP_BAD_REQUEST);
         }
     }
 
@@ -104,12 +116,8 @@ class AnimalController extends AbstractController
             $animal = $this->doctrine->getRepository(Animal::class)->find($id);
 
             if (!$animal) {
-                return new JsonResponse(['message' => 'Animal non trouvé.'], Response::HTTP_NOT_FOUND);
+                return new JsonResponse(['errors' => ValidationUtils::createValidationErrorArray("animal", "Animal non trouvé")], Response::HTTP_NOT_FOUND);
             }
-
-			if (empty($request->toArray())) {
-				return new JsonResponse(['message' => 'Aucune donnée passée'], Response::HTTP_NOT_FOUND);
-			}
 
             if (isset($animalData['descriptions'])) {
                 foreach ($animalData['descriptions'] as $idDescription) {
@@ -118,7 +126,7 @@ class AnimalController extends AbstractController
                         $animal->addDescription($descriptionAnimal);
                     }
                     else {
-                        throw new \InvalidArgumentException('Aucune description de l\'animal n\'a été spécifié');
+                        return new JsonResponse(['errors' => ValidationUtils::createValidationErrorArray("description", "Aucune description de l\'animal n\'a été spécifié")], Response::HTTP_NOT_FOUND);
                     }
                 }
             }
@@ -130,12 +138,20 @@ class AnimalController extends AbstractController
 				[AbstractNormalizer::OBJECT_TO_POPULATE => $animal, ['groups' => 'animal']]
 			);
 
+            $errors = $this->validator->validate($animalUpdate);
+
+            if (count($errors) > 0) {
+                $formattedErrors = ValidationUtils::formatValidationErrors($errors);
+
+                return new JsonResponse(['errors' => $formattedErrors], Response::HTTP_BAD_REQUEST);
+            }
+
             $this->em->persist($animalUpdate);
             $this->em->flush();
 
-            return new JsonResponse(['message' => 'Animal mis à jour']);
+            return new JsonResponse(['success' => ValidationUtils::createValidationErrorArray("animal", "Animal mis à jour")]);
         } catch (\Exception $e) {
-            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return new JsonResponse(['errors' => ["message" => $e->getMessage()]], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -146,13 +162,13 @@ class AnimalController extends AbstractController
             $animal = $this->doctrine->getRepository(Animal::class)->find($id);
 
             if (!$animal) {
-                return new JsonResponse(['message' => 'Animal non trouvé.'], Response::HTTP_NOT_FOUND);
+                return new JsonResponse(['errors' => ValidationUtils::createValidationErrorArray("animal", "Animal non trouvé")], Response::HTTP_NOT_FOUND);
             }
 
             $photo = $request->files->get('photo');
 
             if (!$photo) {
-                return new JsonResponse(['message' => 'Aucune photo de l\'animal passée.'], Response::HTTP_NOT_FOUND);
+                return new JsonResponse(['errors' => ValidationUtils::createValidationErrorArray("photo", "Aucune photo passée")], Response::HTTP_NOT_FOUND);
             }
 
             $animal->setPhotoAnimal($photo);
@@ -160,9 +176,9 @@ class AnimalController extends AbstractController
             $this->em->persist($animal);
             $this->em->flush();
 
-            return new JsonResponse(['message' => 'Photo mise à jour']);
+            return new JsonResponse(['success' => ValidationUtils::createValidationErrorArray("photo", "Photo de l'animal mise à jour")]);
         } catch (\Exception $e) {
-            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return new JsonResponse(['errors' => ["message" => $e->getMessage()]], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -173,7 +189,7 @@ class AnimalController extends AbstractController
             $animal = $this->doctrine->getRepository(Animal::class)->find($id);
 
             if (!$animal) {
-                return new JsonResponse(['message' => 'Animal non trouvé.'], Response::HTTP_NOT_FOUND);
+                return new JsonResponse(['errors' => ValidationUtils::createValidationErrorArray("animal", "Animal non trouvé")], Response::HTTP_NOT_FOUND);
             }
 
             $content = $request->toArray();
@@ -189,9 +205,9 @@ class AnimalController extends AbstractController
 
             $this->em->flush();
 
-            return new JsonResponse(['message' => 'Descriptions supprimées de l\'animal']);
+            return new JsonResponse(['success' => ValidationUtils::createValidationErrorArray("description", "Descriptions supprimées de l\'animal")]);
         } catch (\Exception $e) {
-            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return new JsonResponse(['errors' => ["message" => $e->getMessage()]], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 }

@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\VehiculeRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: VehiculeRepository::class)]
 class Vehicule
@@ -16,6 +17,11 @@ class Vehicule
     private ?int $id = null;
 
     #[ORM\Column(length: 9)]
+    #[Assert\NotBlank(message: "L'immatriculation ne peut pas être vide.")]
+    #[Assert\Regex(
+        pattern: '/^[A-Z]{2}[-][0-9]{3}[-][A-Z]{2}$/',
+        message: "L'immatriculation doit être au format XX-000-XX (lettres majuscules et chiffres)."
+    )]
     #[Groups(['vehicule'])]
     private ?string $immatriculation = null;
 

@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: TrajetRepository::class)]
 class Trajet
@@ -15,36 +16,44 @@ class Trajet
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['trajet', 'animal'])]
+    #[Groups(["trajet"])]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
-    #[Groups(['trajet'])]
+    #[ORM\Column]
+    #[Assert\NotBlank(message: "Le lieu de départ ne peut pas être vide")]
+    #[Groups(["trajet"])]
     private ?string $lieuDepart = null;
 
-    #[ORM\Column(length: 255)]
-    #[Groups(['trajet'])]
+    #[ORM\Column]
+    #[Assert\NotBlank(message: "Le lieu de destination ne peut pas être vide")]
+    #[Groups(["trajet"])]
     private ?string $lieuDestination = null;
 
-    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    #[Groups(['trajet'])]
-    private ?\DateTimeInterface $dateHeureDepart = null;
+    #[ORM\Column(type: "datetime")]
+    #[Groups(["trajet"])]
+    private ?\DateTime $dateHeureDepart = null;
 
     #[ORM\Column]
-    #[Groups(['trajet'])]
+    #[Assert\NotNull(message: "Le nombre de places disponibles ne peut pas être nul")]
+    #[Assert\Type(type: "integer", message: "Le nombre de places disponibles doit être un nombre entier")]
+    #[Assert\PositiveOrZero(message: "Le nombre de places disponibles doit être positif ou zéro")]
+    #[Groups(["trajet"])]
     private ?int $placesDisponible = null;
 
     #[ORM\Column]
-    #[Groups(['trajet'])]
+    #[Assert\NotNull(message: "Le prix par personne ne peut pas être nul")]
+    #[Assert\Type(type: "integer", message: "Le prix par personne doit être un nombre entier")]
+    #[Assert\Positive(message: "Le prix par personne doit être un nombre positif")]
+    #[Groups(["trajet"])]
     private ?int $prixParPersonne = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['trajet'])]
+    #[Groups(["trajet"])]
     private ?string $description = null;
 
-    #[ORM\ManyToOne(inversedBy: 'trajetsCrees', cascade : ["persist"])]
+    #[ORM\ManyToOne(inversedBy: "trajetsCrees", cascade: ["persist"])]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['trajet'])]
+    #[Groups(["trajet"])]
     private ?User $user = null;
 
     #[ORM\ManyToMany(targetEntity: Animal::class, inversedBy: 'trajets')]
@@ -52,7 +61,10 @@ class Trajet
     private Collection $animaux;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTimeInterface $dateSuppression = null;
+    private ?\DateTime $dateSuppression = null;
+
+    #[ORM\OneToOne(mappedBy: 'trajet', cascade: ['persist', 'remove'])]
+    private ?Facture $facture = null;
 
     public function __construct()
     {
@@ -88,12 +100,12 @@ class Trajet
         return $this;
     }
 
-    public function getDateHeureDepart(): ?\DateTimeInterface
+    public function getDateHeureDepart(): ?\DateTime
     {
         return $this->dateHeureDepart;
     }
 
-    public function setDateHeureDepart(\DateTimeInterface $dateHeureDepart): static
+    public function setDateHeureDepart(\DateTime $dateHeureDepart): static
     {
         $this->dateHeureDepart = $dateHeureDepart;
 
@@ -172,14 +184,31 @@ class Trajet
         return $this;
     }
 
-    public function getDateSuppression(): ?\DateTimeInterface
+    public function getDateSuppression(): ?\DateTime
     {
         return $this->dateSuppression;
     }
 
-    public function setDateSuppression(?\DateTimeInterface $dateSuppression): static
+    public function setDateSuppression(?\DateTime $dateSuppression): static
     {
         $this->dateSuppression = $dateSuppression;
+
+        return $this;
+    }
+
+    public function getFacture(): ?Facture
+    {
+        return $this->facture;
+    }
+
+    public function setFacture(Facture $facture): static
+    {
+        // set the owning side of the relation if necessary
+        if ($facture->getTrajet() !== $this) {
+            $facture->setTrajet($this);
+        }
+
+        $this->facture = $facture;
 
         return $this;
     }

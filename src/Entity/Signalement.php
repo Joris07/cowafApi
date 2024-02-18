@@ -3,10 +3,9 @@
 namespace App\Entity;
 
 use App\Repository\SignalementRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: SignalementRepository::class)]
 class Signalement
@@ -14,19 +13,23 @@ class Signalement
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['user'])]
+    #[Groups(['user', 'signalement'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: "La raison du signalement ne peut pas être vide.")]
+    #[Groups(['signalement'])]
     private ?string $raison = null;
 
-    #[ORM\ManyToMany(targetEntity: User::class, inversedBy: 'signalements')]
-    private Collection $signale;
+    #[ORM\ManyToOne(inversedBy: 'signalementsFaits')]
+    #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['signalement'])]
+    private ?User $auteur = null;
 
-    public function __construct()
-    {
-        $this->signale = new ArrayCollection();
-    }
+    #[ORM\ManyToOne(inversedBy: 'signalementsPris')]
+    #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['signalement'])]
+    private ?User $destinataire = null;
 
     public function getId(): ?int
     {
@@ -45,26 +48,26 @@ class Signalement
         return $this;
     }
 
-    /**
-     * @return Collection<int, User>
-     */
-    public function getSignale(): Collection
+    public function getAuteur(): ?User
     {
-        return $this->signale;
+        return $this->auteur;
     }
 
-    public function addSignale(User $signale): static
+    public function setAuteur(?User $auteur): static
     {
-        if (!$this->signale->contains($signale)) {
-            $this->signale->add($signale);
-        }
+        $this->auteur = $auteur;
 
         return $this;
     }
 
-    public function removeSignale(User $signale): static
+    public function getDestinataire(): ?User
     {
-        $this->signale->removeElement($signale);
+        return $this->destinataire;
+    }
+
+    public function setDestinataire(?User $destinataire): static
+    {
+        $this->destinataire = $destinataire;
 
         return $this;
     }

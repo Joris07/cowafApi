@@ -10,6 +10,8 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\HttpFoundation\File\File;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Constraints\PasswordStrength;
 use Vich\UploaderBundle\Mapping\Annotation as Vich;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
@@ -19,37 +21,54 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['trajet', 'user', 'animal', 'avis', 'vehicule'])]
+    #[Groups(['trajet', 'user', 'animal', 'avis', 'vehicule', 'signalement', 'facture'])]
     private ?int $id = null;
-    
+
     #[ORM\Column(length: 180, unique: true)]
+    #[Assert\Email(message: "L'adresse email '{{ value }}' n'est pas valide")]
     #[Groups(['user'])]
     private ?string $email = null;
 
     #[ORM\Column]
     #[Groups(['user'])]
     private array $roles = ["ROLE_USER"];
-
-    /**
-     * @var string The hashed password
-     */
+    
     #[ORM\Column]
+    #[Assert\PasswordStrength(
+        message: "Le mot de passe doit contenir au moins 12 caractères, dont une majuscule, une minuscule, un chiffre et un caractère spécial",
+        minScore : PasswordStrength::STRENGTH_WEAK
+    )]
     #[Groups(['user'])]
     private ?string $password = null;
 
     #[ORM\Column(length: 50)]
+    #[Assert\NotBlank(message: "Le nom ne peut pas être vide.")]
+    #[Assert\Length(max: 50, maxMessage: "Le nom ne peut pas dépasser {{ limit }} caractères")]
     #[Groups(['user'])]
     private ?string $nom = null;
 
     #[ORM\Column(length: 50)]
+    #[Assert\NotBlank(message: "Le prénom ne peut pas être vide.")]
+    #[Assert\Length(max: 50, maxMessage: "Le prénom ne peut pas dépasser {{ limit }} caractères")]
     #[Groups(['user'])]
     private ?string $prenom = null;
 
     #[ORM\Column(length: 50, nullable: true)]
+    #[Assert\Length(max: 50, maxMessage: "Le numéro de téléphone ne peut pas dépasser {{ limit }} caractères")]
+    #[Assert\Regex(
+        pattern: '/^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/',
+        message: 'Le numéro de téléphone doit être au format français (Exemple : +33789096525)'
+    )]
     #[Groups(['user'])]
     private ?string $telephone = null;
 
     #[ORM\Column]
+    #[Assert\NotBlank(message: "La note ne peut pas être vide")]
+    #[Assert\Range(
+        min: 0,
+        max: 5,
+        notInRangeMessage: "La note doit être comprise entre {{ min }} et {{ max }}"
+    )]
     #[Groups(['user'])]
     private ?int $note = 0;
 
@@ -68,10 +87,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Vehicule::class)]
     #[Groups(['user'])]
     private Collection $vehicules;
-
-    #[ORM\ManyToMany(targetEntity: Signalement::class, mappedBy: 'signale')]
-    #[Groups(['user'])]
-    private Collection $signalements;
 
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Facture::class)]
     #[Groups(['user'])]
@@ -95,15 +110,22 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $updatedAt = null;
 
+    #[ORM\OneToMany(mappedBy: 'auteur', targetEntity: Signalement::class)]
+    private Collection $signalementsFaits;
+
+    #[ORM\OneToMany(mappedBy: 'destinataire', targetEntity: Signalement::class)]
+    private Collection $signalementsPris;
+
     public function __construct()
     {
         $this->animals = new ArrayCollection();
         $this->trajetsCrees = new ArrayCollection();
         $this->vehicules = new ArrayCollection();
-        $this->signalements = new ArrayCollection();
         $this->factures = new ArrayCollection();
         $this->avisPostes = new ArrayCollection();
         $this->avisDestines = new ArrayCollection();
+        $this->signalementsFaits = new ArrayCollection();
+        $this->signalementsPris = new ArrayCollection();
     }
 
     public function setImageName(?string $imageName): void
@@ -358,33 +380,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * @return Collection<int, Signalement>
-     */
-    public function getSignalements(): Collection
-    {
-        return $this->signalements;
-    }
-
-    public function addSignalement(Signalement $signalement): static
-    {
-        if (!$this->signalements->contains($signalement)) {
-            $this->signalements->add($signalement);
-            $signalement->addSignale($this);
-        }
-
-        return $this;
-    }
-
-    public function removeSignalement(Signalement $signalement): static
-    {
-        if ($this->signalements->removeElement($signalement)) {
-            $signalement->removeSignale($this);
-        }
-
-        return $this;
-    }
-
-    /**
      * @return Collection<int, Facture>
      */
     public function getFactures(): Collection
@@ -459,6 +454,66 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             // set the owning side to null (unless already changed)
             if ($avis->getDestinataire() === $this) {
                 $avis->setDestinataire(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Signalement>
+     */
+    public function getSignalementsFaits(): Collection
+    {
+        return $this->signalementsFaits;
+    }
+
+    public function addSignalementsFait(Signalement $signalementsFait): static
+    {
+        if (!$this->signalementsFaits->contains($signalementsFait)) {
+            $this->signalementsFaits->add($signalementsFait);
+            $signalementsFait->setAuteur($this);
+        }
+
+        return $this;
+    }
+
+    public function removeSignalementsFait(Signalement $signalementsFait): static
+    {
+        if ($this->signalementsFaits->removeElement($signalementsFait)) {
+            // set the owning side to null (unless already changed)
+            if ($signalementsFait->getAuteur() === $this) {
+                $signalementsFait->setAuteur(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Signalement>
+     */
+    public function getSignalementsPris(): Collection
+    {
+        return $this->signalementsPris;
+    }
+
+    public function addSignalementsPri(Signalement $signalementsPri): static
+    {
+        if (!$this->signalementsPris->contains($signalementsPri)) {
+            $this->signalementsPris->add($signalementsPri);
+            $signalementsPri->setDestinataire($this);
+        }
+
+        return $this;
+    }
+
+    public function removeSignalementsPri(Signalement $signalementsPri): static
+    {
+        if ($this->signalementsPris->removeElement($signalementsPri)) {
+            // set the owning side to null (unless already changed)
+            if ($signalementsPri->getDestinataire() === $this) {
+                $signalementsPri->setDestinataire(null);
             }
         }
 

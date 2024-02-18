@@ -6,6 +6,7 @@ use App\Repository\AvisRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: AvisRepository::class)]
 class Avis
@@ -22,11 +23,15 @@ class Avis
 
     #[ORM\Column]
     #[Groups(['avis'])]
+    #[Assert\Range(
+        max: 5,
+        maxMessage: "La note ne peut pas dépasser 5"
+    )]
     private ?int $note = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     #[Groups(['avis'])]
-    private ?\DateTimeInterface $date = null;
+    private ?\DateTime $date = null;
 
     #[ORM\ManyToOne(inversedBy: 'avis')]
     #[ORM\JoinColumn(nullable: false)]
@@ -72,12 +77,12 @@ class Avis
         return $this;
     }
 
-    public function getDate(): ?\DateTimeInterface
+    public function getDate(): ?\DateTime
     {
         return $this->date;
     }
 
-    public function setDate(\DateTimeInterface $date): static
+    public function setDate(\DateTime $date): static
     {
         $this->date = $date;
 

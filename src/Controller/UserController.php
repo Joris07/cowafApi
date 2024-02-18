@@ -13,6 +13,8 @@ use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Entity\User;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use App\Util\ValidationUtils;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/api/users', name: 'app_user')]
 class UserController extends AbstractController
@@ -21,13 +23,15 @@ class UserController extends AbstractController
     private SerializerInterface $serializer;
     private EntityManagerInterface $em;
     private UserPasswordHasherInterface $userPasswordHasher;
+    private ValidatorInterface $validator;
 
-    public function __construct(ManagerRegistry $doctrine, SerializerInterface $serializer, EntityManagerInterface $em, UserPasswordHasherInterface $userPasswordHasher)
+    public function __construct(ManagerRegistry $doctrine, SerializerInterface $serializer, EntityManagerInterface $em, UserPasswordHasherInterface $userPasswordHasher, ValidatorInterface $validator)
     {
         $this->doctrine = $doctrine;
         $this->serializer = $serializer;
         $this->em = $em;
         $this->userPasswordHasher = $userPasswordHasher;
+        $this->validator = $validator;
     }
 
     #[Route('/', name: 'users', methods: ['GET'])]
@@ -46,7 +50,7 @@ class UserController extends AbstractController
         $user = $this->doctrine->getRepository(User::class)->find($id);
 
         if (!$user) {
-            return new JsonResponse(['message' => 'Utilisateur non trouvé.'], Response::HTTP_NOT_FOUND);
+            return new JsonResponse(['errors' => ValidationUtils::createValidationErrorArray("User", "utilisateur non trouvé")], Response::HTTP_NOT_FOUND);
         }
 
         $jsonUser = $this->serializer->serialize($user, 'json', ['groups' => 'user']);
@@ -59,19 +63,28 @@ class UserController extends AbstractController
         try {
             $userData = $request->toArray();
             $user = $this->serializer->deserialize($request->getContent(), User::class, 'json', ['groups' => 'user']);
+            
+            $errors = $this->validator->validate($user);
+            
+            if (count($errors) > 0) {
+                $formattedErrors = ValidationUtils::formatValidationErrors($errors);
+
+                return new JsonResponse(['errors' => $formattedErrors], Response::HTTP_BAD_REQUEST);
+            }
     
             if (isset($userData['password'])) {
                 $user->setPassword($this->userPasswordHasher->hashPassword($user, $userData['password']));
             } else {
-                throw new \InvalidArgumentException('Le mot de passe est requis et ne peut pas être vide.');
+                return new JsonResponse(['errors' => ValidationUtils::createValidationErrorArray("password", "Aucun mot de passe passé")], Response::HTTP_NOT_FOUND);
             }
-    
+            
             $this->em->persist($user);
             $this->em->flush();
     
-            return new JsonResponse(['message' => 'Utilisateur créé avec succès', 'id' => $user->getId()], Response::HTTP_CREATED);
+            return new JsonResponse(['success' => ValidationUtils::createValidationErrorArray("user", "Utilisateur créé avec succès", $user->getId())], Response::HTTP_CREATED);
+
         } catch (\Exception $e) {
-            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+            return new JsonResponse(['errors' => ["message" => $e->getMessage()]], Response::HTTP_BAD_REQUEST);
         }
     }
 
@@ -82,12 +95,8 @@ class UserController extends AbstractController
             $user = $this->doctrine->getRepository(User::class)->find($id);
 
             if (!$user) {
-                return new JsonResponse(['message' => 'Utilisateur non trouvé.'], Response::HTTP_NOT_FOUND);
+                return new JsonResponse(['errors' => ValidationUtils::createValidationErrorArray("user", "Utilisateur non trouvé")], Response::HTTP_NOT_FOUND);
             }
-
-            if (empty($request->toArray())) {
-				return new JsonResponse(['message' => 'Aucune donnée passée'], Response::HTTP_NOT_FOUND);
-			}
 
             $userUpdate = $this->serializer->deserialize(
                 $request->getContent(), 
@@ -96,12 +105,20 @@ class UserController extends AbstractController
                 [AbstractNormalizer::OBJECT_TO_POPULATE => $user, ['groups' => 'user']]
             );
 
+            $errors = $this->validator->validate($user);
+
+            if (count($errors) > 0) {
+                $formattedErrors = ValidationUtils::formatValidationErrors($errors);
+
+                return new JsonResponse(['errors' => $formattedErrors], Response::HTTP_BAD_REQUEST);
+            }
+
             $this->em->persist($userUpdate);
             $this->em->flush();
 
-            return new JsonResponse(['message' => 'Utilisateur mis à jour']);
+            return new JsonResponse(['success' => ValidationUtils::createValidationErrorArray("user", "Utilisateur mis à jour")]);
         } catch (\Exception $e) {
-            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return new JsonResponse(['errors' => ["message" => $e->getMessage()]], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -112,13 +129,13 @@ class UserController extends AbstractController
             $user = $this->doctrine->getRepository(User::class)->find($id);
             
             if (!$user) {
-                return new JsonResponse(['message' => 'Utilisateur non trouvé.'], Response::HTTP_NOT_FOUND);
+                return new JsonResponse(['errors' => ValidationUtils::createValidationErrorArray("user", "Utilisateur non trouvé")], Response::HTTP_NOT_FOUND);
             }
 
             $photo = $request->files->get('photo');
 
             if (!$photo) {
-                return new JsonResponse(['message' => 'Aucune photo de profil passée.'], Response::HTTP_NOT_FOUND);
+                return new JsonResponse(['errors' => ValidationUtils::createValidationErrorArray("photo", 'Aucune photo de profil passée')], Response::HTTP_NOT_FOUND);
             }
 
             $user->setPhotoProfil($photo);
@@ -126,9 +143,9 @@ class UserController extends AbstractController
             $this->em->persist($user);
             $this->em->flush();
 
-            return new JsonResponse(['message' => 'Photo mise à jour']);
+            return new JsonResponse(['success' => ValidationUtils::createValidationErrorArray("photo", "Photo mise à jour")]);
         } catch (\Exception $e) {
-            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return new JsonResponse(['errors' => ["message" => $e->getMessage()]], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 }
