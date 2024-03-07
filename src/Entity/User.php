@@ -108,12 +108,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $imageName = null;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['user'])]
     private ?\DateTimeImmutable $updatedAt = null;
 
     #[ORM\OneToMany(mappedBy: 'auteur', targetEntity: Signalement::class)]
+    #[Groups(['user'])]
     private Collection $signalementsFaits;
 
     #[ORM\OneToMany(mappedBy: 'destinataire', targetEntity: Signalement::class)]
+    #[Groups(['user'])]
     private Collection $signalementsPris;
 
     public function __construct()
@@ -436,6 +439,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         }
 
         return $this;
+    }
+
+    /**
+     * @return Collection<int, Avis>
+     */
+    public function getAvisDestines(): Collection
+    {
+        return $this->avisDestines;
     }
 
     public function addAvisDestine(Avis $avis): static

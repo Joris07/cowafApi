@@ -16,7 +16,7 @@ class Trajet
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["trajet"])]
+    #[Groups(["trajet", "user"])]
     private ?int $id = null;
 
     #[ORM\Column]
