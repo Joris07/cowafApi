@@ -13,7 +13,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Entity\User;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
-use App\Util\ValidationUtils;
+use App\Utils\ValidationUtils;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/api/users', name: 'app_user')]

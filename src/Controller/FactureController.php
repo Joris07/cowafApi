@@ -14,7 +14,7 @@ use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
-use App\Util\ValidationUtils;
+use App\Utils\ValidationUtils;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/api/factures', name: 'factures')]

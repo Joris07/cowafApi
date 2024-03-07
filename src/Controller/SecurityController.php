@@ -33,4 +33,10 @@ class SecurityController extends AbstractController
 
 		return new JsonResponse(['token' => $token]);
 	}
+
+	#[Route('/', name:"app")]
+	public function app()
+	{
+		return new JsonResponse(['token' => "test"]);
+	}
 }

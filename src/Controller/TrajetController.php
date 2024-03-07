@@ -14,7 +14,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use App\Entity\Trajet;
 use App\Entity\User;
 use App\Entity\Animal;
-use App\Util\ValidationUtils;
+use App\Utils\ValidationUtils;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/api/trajets', name: 'app_trajet')]

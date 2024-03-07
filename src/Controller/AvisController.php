@@ -15,7 +15,7 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use App\Util\ValidationUtils;
+use App\Utils\ValidationUtils;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/api/avis', name: 'avis')]

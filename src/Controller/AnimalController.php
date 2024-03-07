@@ -14,7 +14,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 use App\Entity\User;
-use App\Util\ValidationUtils;
+use App\Utils\ValidationUtils;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/api/animals', name: 'app_animal')]

@@ -17,7 +17,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
-use App\Util\ValidationUtils;
+use App\Utils\ValidationUtils;
 
 #[Route('/api/vehicules', name: 'app_vehicule')]
 class VehiculeController extends AbstractController
