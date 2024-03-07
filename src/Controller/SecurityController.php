@@ -31,12 +31,6 @@ class SecurityController extends AbstractController
 
 		$token = $JWTManager->create($user);
 
-		return new JsonResponse(['token' => $token]);
-	}
-
-	#[Route('/', name:"app")]
-	public function app()
-	{
-		return new JsonResponse(['token' => "test"]);
+		return new JsonResponse(['token' => $token, 'user' => $user]);
 	}
 }
