@@ -14,12 +14,7 @@ class JWTExpiredListener {
     {
         /** @var JWTAuthenticationFailureResponse */
 
-        $data = [
-            'status'  => '403',
-            'message' => 'Token expiré'
-        ];
-
-        $response = new JsonResponse($data, 200);
+        $response = new JWTAuthenticationFailureResponse("Token expiré", 200);
 
         $event->setResponse($response);
     }

@@ -3,7 +3,7 @@
 namespace App\EventListener;
 
 use Lexik\Bundle\JWTAuthenticationBundle\Event\JWTNotFoundEvent;
-use Symfony\Component\HttpFoundation\JsonResponse;
+use Lexik\Bundle\JWTAuthenticationBundle\Response\JWTAuthenticationFailureResponse;
 
 class JWTNotFoundListener {
     /**
@@ -11,12 +11,8 @@ class JWTNotFoundListener {
      */
     public function onJWTNotFound(JWTNotFoundEvent $event)
     {
-        $data = [
-            'status'  => '401',
-            'message' => 'Aucun token passé',
-        ];
 
-        $response = new JsonResponse($data, 200);
+        $response = new JWTAuthenticationFailureResponse("Token non trouvé", 200);
 
         $event->setResponse($response);
     }
