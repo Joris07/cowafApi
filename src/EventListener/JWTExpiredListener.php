@@ -19,7 +19,7 @@ class JWTExpiredListener {
             'message' => 'Token expiré'
         ];
 
-        $response = new JsonResponse($data);
+        $response = new JsonResponse($data, 200);
 
         $event->setResponse($response);
     }

@@ -4,8 +4,6 @@ namespace App\EventListener;
 
 use Lexik\Bundle\JWTAuthenticationBundle\Event\AuthenticationFailureEvent;
 use Lexik\Bundle\JWTAuthenticationBundle\Response\JWTAuthenticationFailureResponse;
-use Symfony\Component\HttpFoundation\JsonResponse;
-
 
 class AuthenticationFailureListener
 {
@@ -15,7 +13,7 @@ class AuthenticationFailureListener
     public function onAuthenticationFailureResponse(AuthenticationFailureEvent $event)
     {
 
-        $response = new JWTAuthenticationFailureResponse('Erreur authentification', JsonResponse::HTTP_UNAUTHORIZED);
+        $response = new JWTAuthenticationFailureResponse('Erreur d\'authentification', 200);
 
         $event->setResponse($response);
     }

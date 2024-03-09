@@ -16,7 +16,7 @@ class JWTNotFoundListener {
             'message' => 'Aucun token passé',
         ];
 
-        $response = new JsonResponse($data);
+        $response = new JsonResponse($data, 200);
 
         $event->setResponse($response);
     }
