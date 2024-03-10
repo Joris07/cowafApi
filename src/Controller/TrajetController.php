@@ -14,6 +14,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use App\Entity\Trajet;
 use App\Entity\User;
 use App\Entity\Animal;
+use App\Repository\TrajetRepository;
 use App\Utils\ValidationUtils;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -40,6 +41,22 @@ class TrajetController extends AbstractController
         $trajets = $repository->findAll();
 
         $jsonTrajets = $this->serializer->serialize($trajets, 'json', ['groups' => 'trajet']);
+        return new JsonResponse($jsonTrajets, Response::HTTP_OK, [], true);
+    }
+
+
+    #[Route('/participate', name: 'trajets_by_user', methods: ['GET'])]
+    public function getTrajetsByUser(TrajetRepository $trajetRepository, SerializerInterface $serializer)
+    {
+        $user = $this->getUser();
+
+        if (!$user) {
+            return new JsonResponse(['error' => 'User not authenticated'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $trajets = $trajetRepository->findTrajetsByUserAndAnimals($user);
+        $jsonTrajets = $serializer->serialize($trajets, 'json', ['groups' => 'trajet']);
+
         return new JsonResponse($jsonTrajets, Response::HTTP_OK, [], true);
     }
 

@@ -40,6 +40,7 @@ class AppFixtures extends Fixture
             }
         }
 
+		/*
 		$user = new User();
 		$user->setEmail("user@bookapi.com")
 			->setNom("Gourdon")
@@ -82,5 +83,7 @@ class AppFixtures extends Fixture
 		
 		$manager->persist($trajet);
 		$manager->flush();
+
+		*/
 	}
 }

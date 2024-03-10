@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\Trajet;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use App\Entity\User;
 
 /**
  * @extends ServiceEntityRepository<Trajet>
@@ -19,6 +20,24 @@ class TrajetRepository extends ServiceEntityRepository
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Trajet::class);
+    }
+
+    /**
+     * Récupère tous les trajets uniques auxquels un utilisateur a participé via ses animaux.
+     *
+     * @param User $user L'utilisateur pour lequel récupérer les trajets.
+     *
+     * @return array La liste des trajets uniques.
+     */
+    public function findTrajetsByUserAndAnimals(User $user)
+    {
+        return $this->createQueryBuilder('trajet')
+            ->join('trajet.animaux', 'animal')
+            ->join('animal.user', 'user')
+            ->where('user = :user')
+            ->setParameter('user', $user)
+            ->getQuery()
+            ->getResult();
     }
 
 //    /**
